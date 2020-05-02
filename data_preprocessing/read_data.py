@@ -1,0 +1,182 @@
+import os
+import re
+import sys
+import pickle
+import operator
+import numpy as np
+import pydicom as pd
+
+import clinic as data
+
+from pathlib import Path
+
+os.chdir('..')
+save_dir = os.getcwd() + "/database/Head-Neck-CT"
+
+# list of directory names that contain CT images
+dict_CT = ['standardfull', 'ct images', 'ct_images', 'ctnormal', 'merged', 'ct_std', 'ct std']
+
+def get_MAASTRO_CT_directory(_path):
+    """
+    Get the path to the CT images directory for a given patient from MAASTRO clinic.
+
+    Inputs:
+        _path (str): path to patient directory.
+
+    Return:
+        (str): path to directory with CT images.
+    """
+    # directories with CT or PET images
+    dir_CT = [_folder for _folder in os.listdir(_path) if _folder.isdigit()]
+
+    for _folder in dir_CT:
+        _temp = _path + '/' + _folder + '/'
+        # read first DIOCM file
+        _file = pd.dcmread(_temp + os.listdir(_temp)[0])
+        # save the folder for CT images
+        if _file.Modality == 'CT': path_CT = _folder
+
+    try:
+        return _path + '/' + path_CT
+    except:
+        return "ERROR CT: No directory found."
+
+def get_MCGILL_CT_directory(_path):
+    """
+    Get the path to the CT images directory for a given patient from McGill clinic.
+
+    Inputs:
+        _path (str): path to patient directory.
+
+    Return:
+        (str): path to directory with CT images.
+    """
+    for _folder in os.listdir(_path):
+        # find the directory with CT images
+        idx = _folder.index('-') + 1
+        # save the folder that contains any key word from the given dictionary
+        if any(_folder[idx:len(i)+idx].lower() in i for i in dict_CT):
+            path_CT = _folder
+    try:
+        return _path + '/' + path_CT
+    except:
+        return "ERROR CT: No directory found."
+
+def get_ROI_index(_list, _item):
+    """
+    Get the index of the ROI corresponding to the GTV.
+
+    Inputs:
+        _list (list): all ROI applicable to the CT images.
+        _item (str): name of the ROI for the primary tumor volume.
+
+    Return:
+        (int): GTV index or index containg 'GTV' as substring.
+    """
+    try:
+        return operator.indexOf(_list, _item)
+    except:
+        return operator.indexOf(_list, [ROI for ROI in _list if 'GTV' in ROI][0])
+
+def get_MCGILL_CT_data(_path, _dir):
+    """
+    Get the CT images directory from the patient directory.
+
+    Inputs:
+        _path (str): current path to the patient directory.
+        _dir (list): directories that do not contain CT images.
+
+    Return:
+        (str): path to required directory.
+    """
+    # retrive CT images folder
+    for _folder in os.listdir(_path):
+        if not any(_folder[:len(i)] in i for i in _dir):
+            path_CT = _folder
+
+    # return the CT images path
+    try:
+        return _path + '/' + path_CT
+    except:
+        return "ERROR CT: No directory found."
+
+def get_MCGILL_ROI_data(_path, _pathCT, _inst):
+    """
+    Get the structure file from the patient directory.
+
+    Inputs:
+        _path (str): current path to the patient directory.
+        _pathCT (str): path to the directory with CT images.
+        _inst (obj): clinic instance.
+
+    Return:
+        (str, str) path to the required directory with the file name
+    """
+
+    type_ROI = 'RTstructCTsim-CTPET'
+    path_ROI = _pathCT
+
+    # retrieve separate ROI folder for CHUS clinic
+    if isinstance(_inst, data.clinic_CHUS):
+        # check if there is a structure file with the CT images
+        for i in os.listdir(_pathCT):
+            if re.match(_inst.regexCT,i): return path_ROI, type_ROI
+
+        folder = [i for i in os.listdir(_path) if re.match(_inst.regexROI,i)]
+        path_ROI = _path + '/' + folder[len(folder)-1]
+        type_ROI = 'Pinnacle'
+
+    # return the ROI file and corresponding path
+    try:
+        return path_ROI, type_ROI
+    except:
+        return "ERROR ROI: No directory found.", "ERROR type."
+
+def get_MAASTRO_CT_ROI_data(_path):
+    """
+    Get the CT images and structure file from the patient directory.
+
+    Inputs:
+        _path (str): current path to the patient directory.
+
+    Return:
+        (str, str): path to the required data and structure file.
+    """
+    regex = '^[0-9].000000-'
+
+    path_CT  = _path + '/' + os.listdir(_path)[0]
+    type_ROI = [i for i in os.listdir(path_CT) if re.match(regex,i)][0]
+
+    # return the CT and ROI paths
+    try:
+        return path_CT, type_ROI
+    except:
+        return "ERROR CT: No directory found.", "ERROR type."
+
+
+def write_file_ROI(_list_CT, _recc, _prefix, _idx):
+    """
+    Write the pixel intensities for each patient to a new directory.
+
+    Inputs:
+        _list_CT (list): contains the pixel intensities for the CT image and corresponding contour.
+        _recc (int): true if there is locoregional/distant metastasis or death, else false.
+        _prefix (str): folder name to save patient data.
+        _idx (int): new unique patient reference.
+    """
+    # create new directory
+    _sub = save_dir + _prefix.format(_idx)
+    Path(_sub).mkdir(parents=True, exist_ok=True)
+    os.chdir(_sub)
+
+    # save metastasis value
+    with open('metastasis.pxl', 'wb') as f:
+        pickle.dump(_recc, f)
+
+    # save pixel intensities and their respective contour for every slice
+    for idx, image in enumerate(_list_CT):
+        CT_image, CT_contour, CT_id = image
+        with open('{}.pxl'.format(idx+1), 'wb') as f:
+            pickle.dump(np.array([CT_image, CT_contour]), f)
+
+
