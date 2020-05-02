@@ -57,7 +57,7 @@ def get_data_clinic(write):
 
 def main():
     """
-    python3 read_data.py -write True -inst CHUM CHUS HGJ HMR
+    python3 read_data.py -write True
 
     Inputs:
         -write (bool): True if you want to save desired pixel intensities, else False.
