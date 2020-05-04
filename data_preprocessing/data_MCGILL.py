@@ -61,7 +61,7 @@ def get_data_clinic(clinic, write):
         # path to CT images
         contour_imgs    = rd.get_MCGILL_CT_directory(patient_CT_dir)
         # list of images and corresponding contours
-        contour_arrays  = util.cfile2pixels(file=contour_data,path=contour_imgs,ROIContourSeq=contour_idx)
+        contour_arrays  = util.contour_to_pixel(_file=contour_data, _path=contour_imgs, _seq=contour_idx)
 
         print("#" + str(len(contour_arrays)) + " slices")
 

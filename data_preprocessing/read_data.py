@@ -175,7 +175,7 @@ def write_file_ROI(_list_CT, _recc, _prefix, _idx):
 
     # save pixel intensities and their respective contour for every slice
     for idx, image in enumerate(_list_CT):
-        CT_image, CT_contour, CT_id = image
+        CT_image, CT_contour = image
         with open('{}.pxl'.format(idx+1), 'wb') as f:
             pickle.dump(np.array([CT_image, CT_contour]), f)
 
