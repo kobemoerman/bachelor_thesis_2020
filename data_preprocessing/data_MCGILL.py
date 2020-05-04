@@ -82,7 +82,7 @@ def main():
         -inst (list): clinic to read data from.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("-write", type=bool, required=True)
+    parser.add_argument("-write", type=str, required=True)
     parser.add_argument("-inst", nargs='+', required=True)
     args = parser.parse_args()
 
