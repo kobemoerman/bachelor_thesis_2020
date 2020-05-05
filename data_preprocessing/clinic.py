@@ -44,7 +44,7 @@ class clinic_CHUS:
                   '08-27-1885-CA AMYGDALE FDG TEP EN POS D-',
                   '08-27-1885-CA LANGUE FDG TEP POSITION T-69772']
 
-    outlier = [9, 26, 31, 37, 40, 43, 44, 46, 52, 54, 57, 58, 68, 72, 79, 81, 89, 90, 98, 101, 102]
+    outlier = [9, 26, 31, 37, 40, 43, 44, 46, 52, 54, 57, 58, 68, 72, 81, 89, 90, 98, 101, 102]
 
 class clinic_HGJ:
     size = 92
@@ -63,7 +63,7 @@ class clinic_HGJ:
                   '08-27-1885-B',
                   '08-27-1885-TONSIL']
 
-    outlier = [68]
+    outlier = []
 
 class clinic_HMR:
     size = 41

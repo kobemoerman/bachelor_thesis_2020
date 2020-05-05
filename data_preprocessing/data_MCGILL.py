@@ -39,14 +39,15 @@ def get_data_clinic(clinic, write):
 
     # load excel contour file for current study
     _contour = xlsx.read_excel(contour_xlsx, sheet_name=clinic)
-    ROI_col  = _contour['Name GTV Primary'].tolist()
+    patient_col = _contour['Patient'].tolist()
+    ROI_col     = _contour['Name GTV Primary'].tolist()
 
-    for idx in range(1, _size+1):
+    for idx, _patient in enumerate(patient_col):
         # ignore any outliers
-        if idx in _outlier: continue
+        if (int(_patient[8:])) in _outlier: continue
 
-        print("Processing patient " + _patient.format(idx))
-        _path = home_dir + _patient.format(idx)
+        print("Processing patient " + _patient)
+        _path = home_dir + '/' + _patient
 
         # path to the CT files
         patient_CT_dir  = rd.get_MCGILL_CT_data(_path,_dict)
@@ -57,7 +58,7 @@ def get_data_clinic(clinic, write):
         # ROI sequences
         contour_names   = util.get_roi_names(contour_data)
         # index for Gross Tumor Volume (GTV)
-        contour_idx     = rd.get_ROI_index(contour_names, ROI_col[idx-1])
+        contour_idx     = rd.get_ROI_index(contour_names, ROI_col[idx])
         # path to CT images
         contour_imgs    = rd.get_MCGILL_CT_directory(patient_CT_dir)
         # list of images and corresponding contours
@@ -65,12 +66,12 @@ def get_data_clinic(clinic, write):
 
         print("#" + str(len(contour_arrays)) + " slices")
 
-        _recc = int(loco_col[idx-1] or dist_col[idx-1])
+        _recc = int(loco_col[idx] or dist_col[idx])
 
         print("metastasis: " + str(_recc))
 
         patient = patient + 1
-        if write: rd.write_file_ROI(contour_arrays,_recc,'/1-{:03d}-CT',patient)
+        if write: rd.write_file_ROI(contour_arrays, _recc, '/1-{:03d}-CT', patient)
 
 
 def main():
