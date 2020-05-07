@@ -1,38 +1,53 @@
 import os
-import sys
 import pickle
 import operator
 
 import numpy as np
 import pydicom as pd
 
-sys.path.append('../data_preprocessing')
-import utility
-
 os.chdir('..')
 data_dir = os.getcwd() + "/database/Head-Neck-CT"
 
-def crop_2d_image(img, bounding=(300,300)):
+def crop_2d_image(_img, _dim=(300,300)):
     """
+    Crops a 2d array around its centre to specified dimensions.
+
+    Inputs:
+        _img (numpy.ndarray): floating point numpy array.
+        _dim (int, int): required array shape. Default set to (300, 300).
+
+    Return:
+        (numpy.ndarray): floating point numpy array with _dim shape.
     """
-    start  = tuple(map(lambda a, da: a//2-da//2, img.shape, bounding))
-    end    = tuple(map(operator.add, start, bounding))
+    start  = tuple(map(lambda a, da: a//2-da//2, _img.shape, _dim))
+    end    = tuple(map(operator.add, start, _dim))
     slices = tuple(map(slice, start, end))
 
-    return img[slices]
+    return _img[slices]
 
 def read_data(_path, _parts):
     """
+    Read n slices from a patient corresponding to the CT scan's pixel intensities and tumour delineation.
+
+    Inputs:
+        _path (str): path to the required data.
+        _parts (int): number of slices required.
+
+    Return:
+        (list, list) pixel intensities and tumour delineations
     """
     data   = os.listdir(_path)
     size   = len(data) - 1
 
+    # only retrieve one slice if the gross tumour volume is too small
     _parts = 2 if _parts * size < 10 else _parts + 1
 
+    # equally spaced index of the n slices
     slices = [round(i * size / _parts) - 1 for i in range(1, _parts)]
 
     data_img, data_cntr = [], []
     for _file in slices:
+        # read the data
         with open(_path + '/' + data[_file], 'rb') as f:
             temp = pickle.load(f)
             img  = temp[0]
@@ -51,6 +66,13 @@ def read_data(_path, _parts):
 
 def read_label(_path):
     """
+    Read the patient's metastasis label.
+
+    Inputs:
+        _path (str): path to the required data.
+
+    Return:
+        (int): corresponding patient's label.
     """
     with open(_path + '/metastasis.pxl', 'rb') as f:
         value = pickle.load(f)
@@ -59,37 +81,61 @@ def read_label(_path):
 
 def split_data(_x, _y):
     """
+    Swap half the values of one list with another list.
+
+    Inputs:
+        _x (list): vector of floating points.
+        _y (list): vector of floating poitns.
+
+    Return:
+        (list, list): interchanged lists.
     """
     half_x, half_y = len(_x)//2, len(_y)//2
 
     dx = _x[half_x:] + _y[half_y:]
     dy = _x[:half_x] + _y[:half_y]
 
+    np.random.shuffle(dx)
+    np.random.shuffle(dy)
+
     return dx, dy
 
 def distribute_data(_data):
     """
+    Equally distribute the data between training and test sets.
+
+    Inputs:
+        _data (numpy.ndarray): list of pixel intensities, contours, labels.
+
+    Return:
+        (list): training and test sets.
     """
     l0, l1 = [], []
+
+    # separate data according to their label
     for (_img, _label, _cntr) in _data:
         (l0, l1)[_label == 1].append((_data, _label, _cntr))
 
-    np.random.shuffle(l0)
-    np.random.shuffle(l1)
-
+    # distribute labels equally amongst train and test
     train, test = split_data(l0,l1)
-
-    np.random.shuffle(train)
-    np.random.shuffle(test)
 
     return train, test
 
 def ncia_read_data(_parts=1):
     """
+    Read the preprocessed data from the NCIA database.
+
+    Inputs:
+        _parts (int): number of slices to extract per patient.
+
+    Return:
+        (list): training and test sets.
     """
     data = []
 
-    print("---\tREADING DATA\t---")
+    print("--->\tdistributing data")
+
+    # read data
     for _file in os.listdir(data_dir):
         path  = data_dir + '/' + _file
         label = read_label(path)
@@ -98,27 +144,10 @@ def ncia_read_data(_parts=1):
         for _img, _cntr in zip(img, cntr):
             data.append((_img, label, _cntr))
 
-    print("---\tDISTRIBUTING DATA\t---")
+    # distribute data
     train, test = distribute_data(data)
+
+    print("--->\t done")
 
     return map(list, zip(*train)), map(list, zip(*test))
 
-
-def main():
-    """
-    """
-    (train_data, train_labels, _), (test_data, test_labels, _) = ncia_read_data()
-
-if __name__ == "__main__":
-    main()
-
-"""
-# normalize array
-img_final = img_resampled/2000
-
-# overlap contour array to normalized image array
-test = np.array(np.zeros((350,350)),dtype=np.uint8)
-idx  = np.where(contour_resampled == 1)
-img_contour = img_final
-img_contour[idx[0], idx[1]] = 1
-"""
