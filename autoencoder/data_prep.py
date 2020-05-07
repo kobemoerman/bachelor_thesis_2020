@@ -6,6 +6,9 @@ import operator
 import numpy as np
 import pydicom as pd
 
+sys.path.append('../data_preprocessing')
+import utility
+
 os.chdir('..')
 data_dir = os.getcwd() + "/database/Head-Neck-CT"
 
@@ -18,24 +21,33 @@ def crop_2d_image(img, bounding=(300,300)):
 
     return img[slices]
 
-def read_data(_path):
+def read_data(_path, _parts):
     """
     """
-    data = os.listdir(_path)
-    img_slice = str(round(len(data)/2))
+    data   = os.listdir(_path)
+    size   = len(data) - 1
 
-    with open(_path + '/' + img_slice + '.pxl', 'rb') as f:
-        temp = pickle.load(f)
-        img  = temp[0]
-        cntr = temp[1]
+    _parts = 2 if _parts * size < 10 else _parts + 1
 
-    # crop the CT image and contour data
-    img, cntr = crop_2d_image(img), crop_2d_image(cntr)
+    slices = [round(i * size / _parts) - 1 for i in range(1, _parts)]
 
-    # clip the CT image to have values in the range [0,2000]
-    np.clip(a=img, a_min=0, a_max=2000, out=img)
+    data_img, data_cntr = [], []
+    for _file in slices:
+        with open(_path + '/' + data[_file], 'rb') as f:
+            temp = pickle.load(f)
+            img  = temp[0]
+            cntr = temp[1]
 
-    return img, cntr
+        # crop the CT image and contour data
+        img, cntr = crop_2d_image(img), crop_2d_image(cntr)
+
+        # clip the CT image to have values in the range [0,2000]
+        np.clip(a=img, a_min=0, a_max=2000, out=img)
+
+        data_img.append(img)
+        data_cntr.append(cntr)
+
+    return data_img, data_cntr
 
 def read_label(_path):
     """
@@ -59,8 +71,8 @@ def distribute_data(_data):
     """
     """
     l0, l1 = [], []
-    for (_data, _label) in _data:
-        (l0, l1)[_label == 1].append((_data, _label))
+    for (_img, _label, _cntr) in _data:
+        (l0, l1)[_label == 1].append((_data, _label, _cntr))
 
     np.random.shuffle(l0)
     np.random.shuffle(l1)
@@ -72,20 +84,30 @@ def distribute_data(_data):
 
     return train, test
 
+def ncia_read_data(_parts=1):
+    """
+    """
+    data = []
+
+    print("---\tREADING DATA\t---")
+    for _file in os.listdir(data_dir):
+        path  = data_dir + '/' + _file
+        label = read_label(path)
+        img, cntr = read_data(path, _parts)
+
+        for _img, _cntr in zip(img, cntr):
+            data.append((_img, label, _cntr))
+
+    print("---\tDISTRIBUTING DATA\t---")
+    train, test = distribute_data(data)
+
+    return map(list, zip(*train)), map(list, zip(*test))
+
+
 def main():
     """
     """
-    _data = []
-
-    print("--- READING DATA ---")
-    for _file in os.listdir(data_dir):
-        path = data_dir + '/' + _file
-        data, _ = read_data(path)
-        label   = read_label(path)
-        _data.append((data, label))
-
-    print("--- DISTRIBUTING DATA ---")
-    train, test = distribute_data(_data)
+    (train_data, train_labels, _), (test_data, test_labels, _) = ncia_read_data()
 
 if __name__ == "__main__":
     main()
