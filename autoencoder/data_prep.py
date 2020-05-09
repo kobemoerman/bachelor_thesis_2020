@@ -1,13 +1,11 @@
 import os
-import sys
 import pickle
 import operator
 
 import numpy as np
 import pydicom as pd
 
-sys.path.append('../data_preprocessing')
-import utility as util
+from progress.bar import Bar
 
 os.chdir('..')
 data_dir = os.getcwd() + "/database/Head-Neck-CT"
@@ -42,13 +40,13 @@ def crop_2d_image(_img, _dim=(300,300)):
 
 def fill_contour(_contour):
     """
-    Transforms a 2d contour as to create a mask
+    Transforms a 2d contour as to create a mask.
 
     Inputs:
         _contour (np.ndarray): list of pixel values.
 
     Return:
-        (np.array): 2d contour mask
+        (np.array): 2d contour mask.
     """
     # left to right
     row, col = np.where(_contour)
@@ -122,8 +120,8 @@ def read_data(_path, _parts):
         # read the data
         with open(_path + '/' + data[_file], 'rb') as f:
             temp = pickle.load(f)
-            img  = temp[0]
-            cntr = temp[1]
+            img  = np.array(temp[0])
+            cntr = np.array(temp[1])
 
         # crop the CT image and contour data
         img, cntr = crop_2d_image(img), crop_2d_image(cntr)
@@ -189,14 +187,14 @@ def distribute_data(_data):
 
     # separate data according to their label
     for (_img, _label, _cntr) in _data:
-        (l0, l1)[_label == 1].append((_data, _label, _cntr))
+        (l0, l1)[_label == 1].append((_img, _label, _cntr))
 
     # distribute labels equally amongst train and test
     train, test = split_data(l0,l1)
 
     return train, test
 
-def ncia_read_data(_parts=1):
+def load_data(_parts=1):
     """
     Read the preprocessed data from the NCIA database.
 
@@ -208,7 +206,8 @@ def ncia_read_data(_parts=1):
     """
     data = []
 
-    print("--->\tdistributing data")
+    print("\n--->\tLoading preprocessed CT images from the NCIA database")
+    bar = Bar('Processing', max=len(os.listdir(data_dir)))
 
     # read data
     for _file in os.listdir(data_dir):
@@ -219,11 +218,11 @@ def ncia_read_data(_parts=1):
         for _img, _cntr in zip(img, cntr):
             data.append((_img, label, _cntr))
 
+        bar.next()
+
     # distribute data
     train, test = distribute_data(data)
 
-    print("--->\tdone")
+    bar.finish()
 
-    return map(list, zip(*train)), map(list, zip(*test))
-
-ncia_read_data(1)
+    return map(np.array, zip(*train)), map(np.array, zip(*test))

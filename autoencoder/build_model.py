@@ -1,6 +1,7 @@
+import sys
 import numpy as np
-
 import matplotlib.pyplot as plt
+import data_prep as ncia
 
 from keras.datasets import mnist
 from keras.layers import Input, Dense
@@ -10,7 +11,7 @@ from keras.models import Model
 encoding_dim = 32
 
 # size of input
-img_size = 28**2
+img_size = 300**2
 
 # input placeholder
 input_img = Input(shape=(img_size,))
@@ -34,15 +35,20 @@ decoder = Model(encoded_input, decoded_layer(encoded_input))
 autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
 
 # import the input data
-(x_train, _), (x_test, _) = mnist.load_data()
+(x_train, _, _), (x_test, _, _) = ncia.load_data()
+print("Train shape", x_train.shape)
+print("Test shape", x_test.shape)
+#(x_train, _), (x_test, _) = mnist.load_data()
 
 # normalize the data
-x_train = x_train.astype('float32') / 255.
-x_test  = x_test.astype('float32') / 255.
+x_train = x_train.astype('float32') / 2000.
+x_test  = x_test.astype('float32') / 2000.
+
 
 # reshape the data
 x_train = x_train.reshape((len(x_train), np.prod(x_train.shape[1:])))
 x_test  = x_test.reshape((len(x_test), np.prod(x_test.shape[1:])))
+
 
 print(x_train.shape)
 print(x_test.shape)
@@ -52,7 +58,7 @@ autoencoder.fit(x_train, x_train,
                 batch_size=256,
                 shuffle=True,
                 validation_data=(x_test, x_test))
-
+"""
 # encode and decode some digits (taken from test set)
 encoded_imgs = encoder.predict(x_test)
 decoded_imgs = decoder.predict(encoded_imgs)
@@ -74,3 +80,4 @@ for i in range(n):
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
 plt.show()
+"""
