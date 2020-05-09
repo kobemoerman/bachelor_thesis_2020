@@ -137,5 +137,5 @@ def plot_2d_contour(img_arr, contour_arr, figsize=(20,20)):
     plt.imshow(img_arr, cmap='gray', interpolation='none')
     plt.subplot(1,2,2)
     plt.imshow(img_arr, cmap='gray', interpolation='none')
-    plt.imshow(masked_contour_arr, cmap='cool', interpolation='none', alpha=0.7)
+    plt.imshow(masked_contour_arr, cmap='autumn', interpolation='none', alpha=0.7)
     plt.show()

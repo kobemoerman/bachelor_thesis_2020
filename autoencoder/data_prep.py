@@ -1,12 +1,27 @@
 import os
+import sys
 import pickle
 import operator
 
 import numpy as np
 import pydicom as pd
 
+sys.path.append('../data_preprocessing')
+import utility as util
+
 os.chdir('..')
 data_dir = os.getcwd() + "/database/Head-Neck-CT"
+
+def _dict(default_type):
+    """
+    Dictionary.
+    """
+    class Dictionary(dict):
+        def __getitem__(self, key):
+            if key not in self:
+                dict.__setitem__(self, key, default_type())
+            return dict.__getitem__(self, key)
+    return Dictionary()
 
 def crop_2d_image(_img, _dim=(300,300)):
     """
@@ -24,6 +39,63 @@ def crop_2d_image(_img, _dim=(300,300)):
     slices = tuple(map(slice, start, end))
 
     return _img[slices]
+
+def fill_contour(_contour):
+    """
+    Transforms a 2d contour as to create a mask
+
+    Inputs:
+        _contour (np.ndarray): list of pixel values.
+
+    Return:
+        (np.array): 2d contour mask
+    """
+    # left to right
+    row, col = np.where(_contour)
+    row, col = contour_mask(_contour, row, col)
+    _contour[row, col] = 1
+
+    # top to bottom
+    row, col = np.where(_contour)
+    col, row = contour_mask(_contour, col, row)
+    _contour[row, col] = 1
+
+    return _contour
+
+def contour_mask(_contour, _row, _col):
+    """
+    Transforms the contour rows as to create a mask.
+
+    Inputs:
+        _contour (np.ndarray): list of pixel values.
+        _row (np.ndarray): row indices of the contour.
+        _col (np.ndarray): column indices of the contour.
+    Return:
+        (zip): row and column indices to fill in.
+    """
+    cntr_pixels = _dict(list)
+
+    # initialise dictionary
+    for x, y in zip(_row, _col):
+        cntr_pixels[x].append((x,y))
+
+    cntr_mask = []
+    for x in cntr_pixels:
+        # find the leftmost and rightmost pixels for the current row
+        temp = cntr_pixels[x]
+        _min = min(temp, key = lambda t: t[1])[1]
+        _max = max(temp, key = lambda t: t[1])[1]
+
+        # fill the pixels between _min and _max
+        for y in range(_min, _max):
+            if (x,y) not in temp: cntr_pixels[x].append((x,y))
+
+        cntr_mask.append(cntr_pixels[x])
+
+    # transform to a list of tuples
+    cntr_mask = list(set([pixel for area in cntr_mask for pixel in area]))
+
+    return zip(*cntr_mask)
 
 def read_data(_path, _parts):
     """
@@ -55,6 +127,9 @@ def read_data(_path, _parts):
 
         # crop the CT image and contour data
         img, cntr = crop_2d_image(img), crop_2d_image(cntr)
+
+        # create a mask for the contour
+        cntr = fill_contour(cntr)
 
         # clip the CT image to have values in the range [0,2000]
         np.clip(a=img, a_min=0, a_max=2000, out=img)
@@ -147,7 +222,8 @@ def ncia_read_data(_parts=1):
     # distribute data
     train, test = distribute_data(data)
 
-    print("--->\t done")
+    print("--->\tdone")
 
     return map(list, zip(*train)), map(list, zip(*test))
 
+ncia_read_data(1)
