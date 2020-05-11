@@ -38,10 +38,10 @@ def crop_2d_image(_img, _cntr, _dim=160):
     x, y = row[int(len(row)/2)], col[int(len(col)/2)]
 
     # set up the new dimensions
-    startx = x - (_dim//2)
+    startx = x - (_dim//2) + 1
     endx   = x + (_dim//2) + 1
 
-    starty = y - (_dim//2)
+    starty = y - (_dim//2) + 1
     endy   = y + (_dim//2) + 1
 
     # return the region of interest
