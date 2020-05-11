@@ -21,22 +21,31 @@ def _dict(default_type):
             return dict.__getitem__(self, key)
     return Dictionary()
 
-def crop_2d_image(_img, _dim=(300,300)):
+def crop_2d_image(_img, _cntr, _dim=160):
     """
-    Crops a 2d array around its centre to specified dimensions.
+    Crops a 2d array around the centre of the contour with specified dimensions.
 
     Inputs:
         _img (numpy.ndarray): floating point numpy array.
-        _dim (int, int): required array shape. Default set to (300, 300).
+        _dim (int, int): required array shape. Default set to (180, 180).
 
     Return:
         (numpy.ndarray): floating point numpy array with _dim shape.
     """
-    start  = tuple(map(lambda a, da: a//2-da//2, _img.shape, _dim))
-    end    = tuple(map(operator.add, start, _dim))
-    slices = tuple(map(slice, start, end))
 
-    return _img[slices]
+    # find the location of the tumour
+    row, col = np.where(_cntr)
+    x, y = row[int(len(row)/2)], col[int(len(col)/2)]
+
+    # set up the new dimensions
+    startx = x - (_dim//2)
+    endx   = x + (_dim//2) + 1
+
+    starty = y - (_dim//2)
+    endy   = y + (_dim//2) + 1
+
+    # return the region of interest
+    return _img[startx:endx, starty:endy], _cntr[startx:endx, starty:endy]
 
 def fill_contour(_contour):
     """
@@ -124,7 +133,7 @@ def read_data(_path, _parts):
             cntr = np.array(temp[1])
 
         # crop the CT image and contour data
-        img, cntr = crop_2d_image(img), crop_2d_image(cntr)
+        img, cntr = crop_2d_image(img, cntr)
 
         # create a mask for the contour
         cntr = fill_contour(cntr)
