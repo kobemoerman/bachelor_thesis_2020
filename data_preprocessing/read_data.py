@@ -20,7 +20,9 @@ dict_CT = ['^\d*.000000-standardfull-\d*$',
            '^\d*.000000-merged-\d*$',
            '^\d*.000000-ct std-\d*$']
 
+# RTstruct directory containing the structure file
 struct_ROI   = '^\d*.000000-RTstructCTsim-CTPET-CT-\d*$'
+# pinnacle directory containing the structure file
 pinnacle_ROI = 'Pinnacle (ROI|POI)-\d*$'
 
 def get_MAASTRO_CT_directory(_path):
@@ -85,13 +87,12 @@ def get_ROI_index(_list, _item):
     except:
         return operator.indexOf(_list, [ROI for ROI in _list if 'GTV' in ROI][0])
 
-def get_MCGILL_ROI_data(_path, _inst):
+def get_MCGILL_ROI_data(_path):
     """
     Get the structure file from the patient directory.
 
     Inputs:
         _path (str): current path to the patient directory.
-        _inst (obj): clinic instance.
 
     Return:
         (str, str) path to the required directory with the file name

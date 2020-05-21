@@ -49,7 +49,7 @@ def get_data_clinic(clinic, write):
         _path = home_dir + '/' + _patient
 
         # path to the ROI files
-        patient_ROI_dir, patient_ROI_type = rd.get_MCGILL_ROI_data(_path,_inst)
+        patient_ROI_dir, patient_ROI_type = rd.get_MCGILL_ROI_data(_path)
         # contour structure file
         contour_data    = util.get_struct_file(patient_ROI_dir,patient_ROI_type)
         # ROI sequences
