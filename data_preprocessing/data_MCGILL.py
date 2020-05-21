@@ -28,7 +28,6 @@ def get_data_clinic(clinic, write):
     # clinic parameters
     _patient    = _inst.prefix
     _size       = _inst.size
-    _dict       = _inst.dictionary
     _outlier    = _inst.outlier
 
     # load excel information file for current study
@@ -44,15 +43,13 @@ def get_data_clinic(clinic, write):
 
     for idx, _patient in enumerate(patient_col):
         # ignore any outliers
-        if (int(_patient[8:])) in _outlier: continue
+        if int(_patient[8:]) in _outlier: continue
 
         print("Processing patient " + _patient)
         _path = home_dir + '/' + _patient
 
-        # path to the CT files
-        patient_CT_dir  = rd.get_MCGILL_CT_data(_path,_dict)
         # path to the ROI files
-        patient_ROI_dir, patient_ROI_type = rd.get_MCGILL_ROI_data(_path,patient_CT_dir,_inst)
+        patient_ROI_dir, patient_ROI_type = rd.get_MCGILL_ROI_data(_path,_inst)
         # contour structure file
         contour_data    = util.get_struct_file(patient_ROI_dir,patient_ROI_type)
         # ROI sequences
@@ -60,7 +57,7 @@ def get_data_clinic(clinic, write):
         # index for Gross Tumor Volume (GTV)
         contour_idx     = rd.get_ROI_index(contour_names, ROI_col[idx])
         # path to CT images
-        contour_imgs    = rd.get_MCGILL_CT_directory(patient_CT_dir)
+        contour_imgs    = rd.get_MCGILL_CT_data(_path)
         # list of images and corresponding contours
         contour_arrays  = util.contour_to_pixel(_file=contour_data, _path=contour_imgs, _seq=contour_idx)
 

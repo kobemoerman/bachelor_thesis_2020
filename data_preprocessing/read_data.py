@@ -14,7 +14,14 @@ os.chdir('..')
 save_dir = os.getcwd() + "/database/Head-Neck-CT"
 
 # list of directory names that contain CT images
-dict_CT = ['standardfull', 'ct images', 'ct_images', 'ctnormal', 'merged', 'ct_std', 'ct std']
+dict_CT = ['^\d*.000000-standardfull-\d*$',
+           '^\d*.000000-ct images-\d*$',
+           '^\d*.000000-ctnormal\w*-\d*$',
+           '^\d*.000000-merged-\d*$',
+           '^\d*.000000-ct std-\d*$']
+
+struct_ROI   = '^\d*.000000-RTstructCTsim-CTPET-CT-\d*$'
+pinnacle_ROI = 'Pinnacle (ROI|POI)-\d*$'
 
 def get_MAASTRO_CT_directory(_path):
     """
@@ -41,7 +48,7 @@ def get_MAASTRO_CT_directory(_path):
     except:
         return "ERROR CT: No directory found."
 
-def get_MCGILL_CT_directory(_path):
+def get_MCGILL_CT_data(_path):
     """
     Get the path to the CT images directory for a given patient from McGill clinic.
 
@@ -51,16 +58,16 @@ def get_MCGILL_CT_directory(_path):
     Return:
         (str): path to directory with CT images.
     """
-    for _folder in os.listdir(_path):
-        # find the directory with CT images
-        idx = _folder.index('-') + 1
+
+    # find the directory with the CT images
+    for path, directories, files in os.walk(_path):
         # save the folder that contains any key word from the given dictionary
-        if any(_folder[idx:len(i)+idx].lower() in i for i in dict_CT):
-            path_CT = _folder
-    try:
-        return _path + '/' + path_CT
-    except:
-        return "ERROR CT: No directory found."
+        for _dir in directories:
+            for regex in dict_CT:
+                if re.match(regex, _dir, re.IGNORECASE):
+                    return path + '/' + _dir
+
+    return "ERROR CT: No directory found."
 
 def get_ROI_index(_list, _item):
     """
@@ -78,59 +85,31 @@ def get_ROI_index(_list, _item):
     except:
         return operator.indexOf(_list, [ROI for ROI in _list if 'GTV' in ROI][0])
 
-def get_MCGILL_CT_data(_path, _dir):
-    """
-    Get the CT images directory from the patient directory.
-
-    Inputs:
-        _path (str): current path to the patient directory.
-        _dir (list): directories that do not contain CT images.
-
-    Return:
-        (str): path to required directory.
-    """
-    # retrive CT images folder
-    for _folder in os.listdir(_path):
-        if not any(_folder[:len(i)] in i for i in _dir):
-            path_CT = _folder
-
-    # return the CT images path
-    try:
-        return _path + '/' + path_CT
-    except:
-        return "ERROR CT: No directory found."
-
-def get_MCGILL_ROI_data(_path, _pathCT, _inst):
+def get_MCGILL_ROI_data(_path, _inst):
     """
     Get the structure file from the patient directory.
 
     Inputs:
         _path (str): current path to the patient directory.
-        _pathCT (str): path to the directory with CT images.
         _inst (obj): clinic instance.
 
     Return:
         (str, str) path to the required directory with the file name
     """
 
-    type_ROI = 'RTstructCTsim-CTPET'
-    path_ROI = _pathCT
+    for path, directories, files in os.walk(_path):
+        for _dir in directories:
+            if re.match(struct_ROI, _dir):
+                return path, _dir
+            if re.match(pinnacle_ROI, _dir):
+                struct_path = path
+                struct_dir  = _dir
 
-    # retrieve separate ROI folder for CHUS clinic
-    if isinstance(_inst, data.clinic_CHUS):
-        # check if there is a structure file with the CT images
-        for i in os.listdir(_pathCT):
-            if re.match(_inst.regexCT,i): return path_ROI, type_ROI
-
-        folder = [i for i in os.listdir(_path) if re.match(_inst.regexROI,i)]
-        path_ROI = _path + '/' + folder[len(folder)-1]
-        type_ROI = 'Pinnacle'
-
-    # return the ROI file and corresponding path
     try:
-        return path_ROI, type_ROI
+        return struct_path, struct_dir
     except:
         return "ERROR ROI: No directory found.", "ERROR type."
+
 
 def get_MAASTRO_CT_ROI_data(_path):
     """
@@ -142,7 +121,7 @@ def get_MAASTRO_CT_ROI_data(_path):
     Return:
         (str, str): path to the required data and structure file.
     """
-    regex = '^[0-9].000000-'
+    regex = '^\d.000000-'
 
     path_CT  = _path + '/' + os.listdir(_path)[0]
     type_ROI = [i for i in os.listdir(path_CT) if re.match(regex,i)][0]
