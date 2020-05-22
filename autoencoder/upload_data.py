@@ -27,8 +27,8 @@ def upload_model_data(_slices):
     Path(path).mkdir(parents=True, exist_ok=True)
     os.chdir(path)
     # write data to directory
-    write_file(x_train, x_label, x_contour, 'train', _slices)
-    write_file(y_test, y_label, y_contour, 'test', _slices)
+    write_file(x_train, x_label, x_contour, 'train')
+    write_file(y_test, y_label, y_contour, 'test')
 
     """ load MAASTRO data """
     (x_train, x_label, x_contour) , (y_test, y_label, y_contour) = dp.load_data_MAASTRO(_slices)
@@ -41,8 +41,8 @@ def upload_model_data(_slices):
     Path(path).mkdir(parents=True, exist_ok=True)
     os.chdir(path)
     # write data to directory
-    write_file(x_train, x_label, x_contour, 'train', _slices)
-    write_file(y_test, y_label, y_contour, 'test', _slices)
+    write_file(x_train, x_label, x_contour, 'train')
+    write_file(y_test, y_label, y_contour, 'test')
 
 
 def write_file(_data, _label, _contour, _type):
