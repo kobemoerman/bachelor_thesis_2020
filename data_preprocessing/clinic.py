@@ -22,7 +22,7 @@ class clinic_CHUS:
     prefix = '/HN-CHUS-{:03d}'
     regex  = 'Pinnacle (ROI|POI)-\d*$'
 
-    outlier = [90]
+    outlier = [72, 79, 90]
 
 class clinic_HGJ:
     size = 92
@@ -30,7 +30,7 @@ class clinic_HGJ:
     prefix = '/HN-HGJ-{:03d}'
     regex  = '^\d*.000000-RTstructCTsim-CTPET-CT-\d*$'
 
-    outlier = []
+    outlier = [68]
 
 class clinic_HMR:
     size = 41

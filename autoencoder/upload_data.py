@@ -13,33 +13,51 @@ def upload_model_data(_slices):
     Inputs:
         _slices (int): number of slices to extract per patient.
     """
-    # create new directory
+    # new directory path
     _dir = os.getcwd() + '/database/Model-Data/{}-slice'.format(_slices)
-    Path(_dir).mkdir(parents=True, exist_ok=True)
-    os.chdir(_dir)
 
-    # load data
-    (x_train, x_label, x_contour) , (y_test, y_label, y_contour) = dp.load_data(_slices)
+    """ load MCGILL data """
+    (x_train, x_label, x_contour) , (y_test, y_label, y_contour) = dp.load_data_MCGILL(_slices)
+    # check data shape
+    print("Train shape:", np.array(x_train).shape)
+    print("Test shape:", np.array(y_test).shape)
+    print("Label shapes:", np.array(x_label).shape, np.array(y_label).shape)
+    # create new directory
+    path = _dir + '/MCGILL'
+    Path(path).mkdir(parents=True, exist_ok=True)
+    os.chdir(path)
+    # write data to directory
+    write_file(x_train, x_label, x_contour, 'train', _slices)
+    write_file(y_test, y_label, y_contour, 'test', _slices)
 
-    print("Data shape:", np.array(x_train).shape)
-    print("Label shape:", np.array(x_label).shape)
-    print("Contour shape:", np.array(x_contour).shape)
+    """ load MAASTRO data """
+    (x_train, x_label, x_contour) , (y_test, y_label, y_contour) = dp.load_data_MAASTRO(_slices)
+    # check data shape
+    print("Train shape:", np.array(x_train).shape)
+    print("Test shape:", np.array(y_test).shape)
+    print("Label shapes:", np.array(x_label).shape, np.array(y_label).shape)
+    # create new directory
+    path = _dir + '/MAASTRO'
+    Path(path).mkdir(parents=True, exist_ok=True)
+    os.chdir(path)
+    # write data to directory
+    write_file(x_train, x_label, x_contour, 'train', _slices)
+    write_file(y_test, y_label, y_contour, 'test', _slices)
 
-    # create train files
-    pickle.dump(np.array(x_train),
-                open('train_data_{:02d}.pxl'.format(_slices), 'wb'))
-    pickle.dump(np.array(x_label),
-                open('train_label_{:02d}.pxl'.format(_slices), 'wb'))
-    pickle.dump(np.array(x_contour),
-                open('train_contour_{:02d}.pxl'.format(_slices), 'wb'))
 
-    # create test files
-    pickle.dump(np.array(y_test),
-                open('test_data_{:02d}.pxl'.format(_slices), 'wb'))
-    pickle.dump(np.array(y_label),
-                open('test_label_{:02d}.pxl'.format(_slices), 'wb'))
-    pickle.dump(np.array(y_contour),
-                open('test_contour_{:02d}.pxl'.format(_slices), 'wb'))
+def write_file(_data, _label, _contour, _type):
+    """
+    Write the data to the specified folder.
+
+    Inputs:
+        _data (np.array): list of pixel intensities.
+        _label (np.array): list of labels.
+        _contour (np.array): list of contour.
+        _type (str): distinction between train and test data.
+    """
+    pickle.dump(np.array(_data), open(_type + '_data.pxl', 'wb'))
+    pickle.dump(np.array(_label), open(_type + '_label.pxl', 'wb'))
+    pickle.dump(np.array(_contour), open(_type + '_contour.pxl', 'wb'))
 
 def main():
     """

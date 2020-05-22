@@ -10,6 +10,8 @@ from progress.bar import Bar
 os.chdir('..')
 data_dir = os.getcwd() + "/database/Head-Neck-CT"
 
+SEED = 12345
+
 def _dict(default_type):
     """
     Dictionary.
@@ -161,77 +163,106 @@ def read_label(_path):
 
     return value
 
-def split_data(_x, _y):
+def append_data(_folder, _parts, _processing):
     """
-    Swap half the values of one list with another list.
+    Edit the data and assemble it together into a list.
 
     Inputs:
-        _x (list): vector of floating points.
-        _y (list): vector of floating poitns.
+        _folder (list): list of patients to assemble.
+        _parts (int): number of slices required per patient.
+        _processing (str): data type that is being processed.
 
     Return:
-        (list, list): interchanged lists.
-    """
-    half_x, half_y = len(_x)//2, len(_y)//2
-
-    dx = _x[half_x:] + _y[half_y:]
-    dy = _x[:half_x] + _y[:half_y]
-
-    np.random.shuffle(dx)
-    np.random.shuffle(dy)
-
-    return dx, dy
-
-def distribute_data(_data):
-    """
-    Equally distribute the data between training and test sets.
-
-    Inputs:
-        _data (numpy.ndarray): list of pixel intensities, contours, labels.
-
-    Return:
-        (list): training and test sets.
-    """
-    l0, l1 = [], []
-
-    # separate data according to their label
-    for (_img, _label, _cntr) in _data:
-        (l0, l1)[_label == 1].append((_img, _label, _cntr))
-
-    # distribute labels equally amongst train and test
-    train, test = split_data(l0,l1)
-
-    return train, test
-
-def load_data(_parts=1):
-    """
-    Read the preprocessed data from the NCIA database.
-
-    Inputs:
-        _parts (int): number of slices to extract per patient.
-
-    Return:
-        (list): training and test sets.
+        (list): list of images, contours, and labels.
     """
     data = []
 
-    print("\n--->\tLoading preprocessed CT images from the NCIA database")
-    bar = Bar('Processing', max=len(os.listdir(data_dir)))
+    # create a progress bar
+    bar  = Bar(_processing, max=len(_folder))
 
-    # read data
-    for _file in os.listdir(data_dir):
-        path  = data_dir + '/' + _file
+    for _file in _folder:
+        # path to the patient directory
+        path = data_dir+ '/' + _file
+        # read the patient's label
         label = read_label(path)
+        # read the patient's CT images
         img, cntr = read_data(path, _parts)
-
+        # include to the data
         for _img, _cntr in zip(img, cntr):
             data.append((_img, label, _cntr))
 
         bar.next()
 
-    # distribute data
-    train, test = distribute_data(data)
-
     bar.finish()
 
+    return data
+
+
+def distribute_data(_data):
+    """
+    Split the data equally with an established seed.
+
+    Inputs:
+        _data (list): list of images, contours, and labels.
+
+    Return:
+        (list, list): train and test sets.
+    """
+    # shuffle the data identically every time
+    np.random.seed(SEED)
+    np.random.shuffle(_data)
+
+    # split 50/50
+    split = int(len(_data) / 2)
+    train = _data[:split]
+    test  = _data[split:]
+
+    return train, test
+
+
+def load_data_MAASTRO(_parts=1):
+    """
+    Read the preprocessed data from the MAASTRO dataset.
+
+    Inputs:
+        _parts (int): number of slices to extract per patient.
+
+    Return:
+        (np.array, np.array): training and test sets.
+    """
+    # directories that are part of the MAASTRO study
+    radiomic_dir = [f for f in os.listdir(data_dir) if 'radiomic' in f]
+
+    print("\n--->\tLoading preprocessed CT images from the MAASTRO database")
+
+    # read the preprocessed data
+    data = append_data(radiomic_dir, _parts, 'Processing Train and Test')
+
+    # split the data into training and testing sets
+    train, test = distribute_data(data)
+
     return map(np.array, zip(*train)), map(np.array, zip(*test))
+
+
+def load_data_MCGILL(_parts=1):
+    """
+    Read the preprocessed data from the MCGILL database.
+
+    Inputs:
+        _parts (int): number of slices to extract per patient.
+
+    Return:
+        (np.array, np.array): training and test sets.
+    """
+    # train and test directories that are part of the MCGILL study
+    train_dir = [f for f in os.listdir(data_dir) if 'train' in f]
+    test_dir  = [f for f in os.listdir(data_dir) if 'test' in f]
+
+    print("\n--->\tLoading preprocessed CT images from the MCGILL database")
+
+    # read the corresponding preprocessed data
+    train = append_data(train_dir, _parts, 'Processing Train')
+    test  = append_data(test_dir, _parts, 'Processing Test ')
+
+    return map(np.array, zip(*train)), map(np.array, zip(*test))
+

@@ -43,17 +43,15 @@ def get_data_clinic(write):
         contour_imgs    = rd.get_MAASTRO_CT_directory(patient_CT_dir)
         # list of images and corresponding contours
         contour_arrays  = util.contour_to_pixel(_file=contour_data, _path=contour_imgs, _seq=contour_idx)
-
         print("#" + str(len(contour_arrays)) + " slices")
 
         _distant = int(_info[idx][d_col])
         _local   = int(_info[idx][l_col])
-
-        _recc = int(any(i > 0 for i in [_distant, _local]))
-
+        _death   = 1 - int(_info[idx][s_col])
+        _recc    = [_local, _distant, _death]
         print("metastasis: " + str(_recc))
 
-        if write: rd.write_file_ROI(contour_arrays, _recc, '/2-{:03d}-CT', idx+1)
+        if write: rd.write_file_ROI(contour_arrays, _recc, '/radiomic-{:03d}-CT', idx+1)
 
 def main():
     """

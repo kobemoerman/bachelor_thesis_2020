@@ -6,8 +6,6 @@ import operator
 import numpy as np
 import pydicom as pd
 
-import clinic as data
-
 from pathlib import Path
 
 os.chdir('..')
@@ -144,7 +142,7 @@ def write_file_ROI(_list_CT, _recc, _prefix, _idx):
         _prefix (str): folder name to save patient data.
         _idx (int): new unique patient reference.
     """
-    # create new directory
+    # create new directory?!?jedi=0, ?!?          (*_**args: object*_*, **kwargs: object) ?!?jedi?!?
     _sub = save_dir + _prefix.format(_idx)
     Path(_sub).mkdir(parents=True, exist_ok=True)
     os.chdir(_sub)

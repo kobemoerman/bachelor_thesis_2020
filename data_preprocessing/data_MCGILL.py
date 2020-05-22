@@ -7,7 +7,8 @@ import utility as util
 import clinic as data
 import read_data as rd
 
-patient = 0
+train = 0
+test  = 0
 
 home_dir     = os.getcwd() + "/database/Head-Neck-PET-CT"
 info_xlsx    = os.getcwd() + "/database/INFOclinical_HN_Version2_30may2018.xlsx"
@@ -21,7 +22,7 @@ def get_data_clinic(clinic, write):
         clinic (str): clinic to retrieve data from.
         write (bool): determine whether to write pixel intensities to new directory
     """
-    global patient
+    global train, test
 
     _inst = data.get_clinic(clinic)
 
@@ -60,16 +61,32 @@ def get_data_clinic(clinic, write):
         contour_imgs    = rd.get_MCGILL_CT_data(_path)
         # list of images and corresponding contours
         contour_arrays  = util.contour_to_pixel(_file=contour_data, _path=contour_imgs, _seq=contour_idx)
-
         print("#" + str(len(contour_arrays)) + " slices")
 
-        _recc = int(loco_col[idx] or dist_col[idx])
+        recc = [int(loco_col[idx]), int(dist_col[idx]), int(death_col[idx])]
+        print("metastasis: " + str(recc))
 
-        print("metastasis: " + str(_recc))
+        directory, patient = split_data(_inst)
+        if write: rd.write_file_ROI(contour_arrays, recc, directory, patient)
 
-        patient = patient + 1
-        if write: rd.write_file_ROI(contour_arrays, _recc, '/1-{:03d}-CT', patient)
+def split_data(_inst):
+    """
+    Create directory according to the clinic to split between train and test data.
 
+    Inputs:
+        _inst (obj): clinic instance.
+
+    Return:
+        (str, int) train string for HGJ and CHUS, else test string.
+    """
+    global train, test
+
+    if isinstance(_inst, (data.clinic_HGJ, data.clinic_CHUS)):
+        train = train + 1
+        return '/train-{:03d}-CT', train
+    else:
+        test = test + 1
+        return '/test-{:03d}-CT', test
 
 def main():
     """
