@@ -23,7 +23,7 @@ def _dict(default_type):
             return dict.__getitem__(self, key)
     return Dictionary()
 
-def crop_2d_image(_img, _cntr, _dim=160):
+def crop_2d_image(_img, _cntr, _dim=80):
     """
     Crops a 2d array around the centre of the contour with specified dimensions.
 
@@ -97,7 +97,7 @@ def contour_mask(_contour, _row, _col):
 
         # fill the pixels between _min and _max
         for y in range(_min, _max):
-            if (x,y) not in temp: cntr_pixels[x].append((x,y))
+            cntr_pixels[x].append((x,y))
 
         cntr_mask.append(cntr_pixels[x])
 
@@ -265,4 +265,3 @@ def load_data_MCGILL(_parts=1):
     test  = append_data(test_dir, _parts, 'Processing Test ')
 
     return map(np.array, zip(*train)), map(np.array, zip(*test))
-

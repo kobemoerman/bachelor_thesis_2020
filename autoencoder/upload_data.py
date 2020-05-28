@@ -14,7 +14,7 @@ def upload_model_data(_slices):
         _slices (int): number of slices to extract per patient.
     """
     # new directory path
-    _dir = os.getcwd() + '/database/Model-Data/{}-slice'.format(_slices)
+    _dir = os.getcwd() + '/database/Model-Data/mask'
 
     """ load MCGILL data """
     (x_train, x_label, x_contour) , (y_test, y_label, y_contour) = dp.load_data_MCGILL(_slices)
