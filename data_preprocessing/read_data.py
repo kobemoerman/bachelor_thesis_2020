@@ -132,29 +132,33 @@ def get_MAASTRO_CT_ROI_data(_path):
         return "ERROR CT: No directory found.", "ERROR type."
 
 
-def write_file_ROI(_list_CT, _recc, _prefix, _idx):
+def write_file_ROI(_list_CT, _recurrence, _clinical, _prefix, _idx):
     """
     Write the pixel intensities for each patient to a new directory.
 
     Inputs:
         _list_CT (list): contains the pixel intensities for the CT image and corresponding contour.
-        _recc (int): true if there is locoregional/distant metastasis or death, else false.
+        _recurrence (list): binary list for patient metastasis.
+        _clinical (list): extra data about the patient.
         _prefix (str): folder name to save patient data.
         _idx (int): new unique patient reference.
     """
-    # create new directory?!?jedi=0, ?!?          (*_**args: object*_*, **kwargs: object) ?!?jedi?!?
+    # create new directory
     _sub = save_dir + _prefix.format(_idx)
     Path(_sub).mkdir(parents=True, exist_ok=True)
     os.chdir(_sub)
 
-    # save metastasis value
-    with open('metastasis.pxl', 'wb') as f:
-        pickle.dump(_recc, f)
+    # save metastasis data
+    with open('recurrence.pxl', 'wb') as f:
+        pickle.dump(_recurrence, f)
+
+    # save clinical data
+    with open('clinical.pxl', 'wb') as f:
+        pickle.dump(_clinical, f)
 
     # save pixel intensities and their respective contour for every slice
     for idx, image in enumerate(_list_CT):
         CT_image, CT_contour = image
         with open('{:03d}.pxl'.format(idx+1), 'wb') as f:
             pickle.dump(np.array([CT_image, CT_contour]), f)
-
 

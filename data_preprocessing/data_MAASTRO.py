@@ -5,12 +5,20 @@ import argparse
 import utility as util
 import read_data as rd
 
-# event distant metastasis (Y)
-d_col = 24
-# event local recurrence (U)
-l_col = 20
+# tumor location (B)
+site_col = 1
+# patient age (C)
+age_col = 2
+# cancer T stage (G)
+t_stage = 6
+# cancer N stage (H)
+n_stage = 7
 # event overall survival (Q)
-s_col = 16
+surv_col = 16
+# event local recurrence (U)
+loco_col = 20
+# event distant metastasis (Y)
+dist_col = 24
 
 home_dir = os.getcwd() + "/database/HEAD-NECK-RADIOMICS-HN1"
 info_csv = os.getcwd() + "/database/HEAD-NECK-RADIOMICS-HN1 Clinical data.csv"
@@ -45,13 +53,12 @@ def get_data_clinic(write):
         contour_arrays  = util.contour_to_pixel(_file=contour_data, _path=contour_imgs, _seq=contour_idx)
         print("#" + str(len(contour_arrays)) + " slices")
 
-        _distant = int(_info[idx][d_col])
-        _local   = int(_info[idx][l_col])
-        _death   = 1 - int(_info[idx][s_col])
-        _recc    = [_local, _distant, _death]
-        print("metastasis: " + str(_recc))
+        # clinical data
+        data = _info[idx]
+        recurrence = [int(data[loco_col]), int(data[dist_col]), 1 - int(data[surv_col])]
+        clinical   = [data[age_col], data[site_col], data[t_stage], data[n_stage]]
 
-        if write: rd.write_file_ROI(contour_arrays, _recc, '/radiomic-{:03d}-CT', idx+1)
+        if write: rd.write_file_ROI(contour_arrays, recurrence, clinical, '/radiomic-{:03d}-CT', idx+1)
 
 def main():
     """

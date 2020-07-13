@@ -23,7 +23,7 @@ def _dict(default_type):
             return dict.__getitem__(self, key)
     return Dictionary()
 
-def crop_2d_image(_img, _cntr, _dim=80):
+def crop_2d_image(_img, _cntr, _dim=128):
     """
     Crops a 2d array around the centre of the contour with specified dimensions.
 
@@ -117,11 +117,12 @@ def read_data(_path, _parts):
     Return:
         (list, list) pixel intensities and tumour delineations
     """
+
     data   = os.listdir(_path)
     size   = len(data) - 1
 
     # only retrieve one slice if the gross tumour volume is too small
-    _parts = 2 if _parts * size < 10 else _parts + 1
+    _parts = 2 if size / _parts < 2.5 else _parts + 1
 
     # equally spaced index of the n slices
     slices = [round(i * size / _parts) - 1 for i in range(1, _parts)]
@@ -148,20 +149,21 @@ def read_data(_path, _parts):
 
     return data_img, data_cntr
 
-def read_label(_path):
+def read_clinical(_path, _type):
     """
-    Read the patient's metastasis label.
+    Read the patient's clinical data.
 
     Inputs:
         _path (str): path to the required data.
+        _type (str): clinical variables type.
 
     Return:
-        (int): corresponding patient's label.
+        (list): corresponding patient's data.
     """
-    with open(_path + '/metastasis.pxl', 'rb') as f:
-        value = pickle.load(f)
+    with open(_path + _type, 'rb') as f:
+        data = pickle.load(f)
 
-    return value
+    return data
 
 def append_data(_folder, _parts, _processing):
     """
@@ -184,12 +186,14 @@ def append_data(_folder, _parts, _processing):
         # path to the patient directory
         path = data_dir+ '/' + _file
         # read the patient's label
-        label = read_label(path)
+        label = read_clinical(path, '/recurrence.pxl')
+        # read the patient's clinical data
+        clinical = read_clinical(path, '/clinical.pxl')
         # read the patient's CT images
         img, cntr = read_data(path, _parts)
         # include to the data
         for _img, _cntr in zip(img, cntr):
-            data.append((_img, label, _cntr))
+            data.append((_img, label, clinical, _cntr))
 
         bar.next()
 

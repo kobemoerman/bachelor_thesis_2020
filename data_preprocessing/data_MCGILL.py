@@ -36,6 +36,10 @@ def get_data_clinic(clinic, write):
     loco_col  = _info['Locoregional'].tolist()
     dist_col  = _info['Distant'].tolist()
     death_col = _info['Death'].tolist()
+    age_col   = _info['Age'].tolist()
+    site_col  = _info['Primary Site'].tolist()
+    t_stage   = _info['T-stage'].tolist()
+    n_stage   = _info['N-stage'].tolist()
 
     # load excel contour file for current study
     _contour = xlsx.read_excel(contour_xlsx, sheet_name=clinic)
@@ -63,11 +67,12 @@ def get_data_clinic(clinic, write):
         contour_arrays  = util.contour_to_pixel(_file=contour_data, _path=contour_imgs, _seq=contour_idx)
         print("#" + str(len(contour_arrays)) + " slices")
 
-        recc = [int(loco_col[idx]), int(dist_col[idx]), int(death_col[idx])]
-        print("metastasis: " + str(recc))
+        # clinical data
+        recurrence = [int(loco_col[idx]), int(dist_col[idx]), int(death_col[idx])]
+        clinical   = [age_col[idx], site_col[idx], t_stage[idx], n_stage[idx]]
 
         directory, patient = split_data(_inst)
-        if write: rd.write_file_ROI(contour_arrays, recc, directory, patient)
+        if write: rd.write_file_ROI(contour_arrays, recurrence, clinical, directory, patient)
 
 def split_data(_inst):
     """
